@@ -1,6 +1,6 @@
 import os
 from datetime import date, datetime, timedelta
-from fastapi import FastAPI, Query, Depends
+from fastapi import FastAPI, Query, Depends, HTTPException
 from typing import List, Optional
 from supabase import create_client, Client
 
@@ -11,8 +11,6 @@ app = FastAPI()
 url = os.getenv('SUPABASE_URL')  # Supabase URL from environment variable
 key = os.getenv('SUPABASE_KEY')  # Supabase API key from environment variable
 supabase: Client = create_client(url, key)
-
-
 
 # Filter function with case-insensitive string matching
 def company_filters(
@@ -62,14 +60,12 @@ def company_filters(
 
     return filters
 
-
 # Utility function to query data or get the count of records
 def query_companies(filters: dict, date_from: Optional[date] = None, date_to: Optional[date] = None, count_only: bool = False):
     query = supabase.table('company').select("*" if not count_only else "count", count='exact')
     
     # Apply filters
     for column, value in filters.items():
-        # Use ilike for string fields to make filtering case-insensitive
         if column in ['cnumber', 'cname', 'address_line_1', 'address_line_2', 'address_locality', 
                       'address_region', 'address_country', 'address_postal_code', 'siccodes', 'capital_currency']:
             query = query.ilike(column, f"%{value}%")
@@ -88,13 +84,11 @@ def query_companies(filters: dict, date_from: Optional[date] = None, date_to: Op
         return {"count": response.count}  # Supabase provides the count in response.count
     return response.data
 
-
 # Endpoint: Fetch all companies with optional filters and count query
 @app.get("/company/all")
 def get_all_companies(filters: dict = Depends(company_filters), count_only: bool = Query(False)):
     result = query_companies(filters, count_only=count_only)
     return {"result": result}
-
 
 # Endpoint: Fetch companies incorporated today with optional filters and count query
 @app.get("/company/today")
@@ -102,7 +96,6 @@ def get_companies_today(filters: dict = Depends(company_filters), count_only: bo
     today = date.today()
     result = query_companies(filters, date_from=today, date_to=today, count_only=count_only)
     return {"result": result}
-
 
 # Endpoint: Fetch companies incorporated this week (Monday - Sunday) with optional filters and count query
 @app.get("/company/week")
@@ -113,7 +106,6 @@ def get_companies_week(filters: dict = Depends(company_filters), count_only: boo
     result = query_companies(filters, date_from=start_of_week, date_to=end_of_week, count_only=count_only)
     return {"result": result}
 
-
 # Endpoint: Fetch companies incorporated this month with optional filters and count query
 @app.get("/company/month")
 def get_companies_month(filters: dict = Depends(company_filters), count_only: bool = Query(False)):
@@ -123,7 +115,6 @@ def get_companies_month(filters: dict = Depends(company_filters), count_only: bo
     result = query_companies(filters, date_from=start_of_month, date_to=end_of_month, count_only=count_only)
     return {"result": result}
 
-
 # Endpoint: Fetch companies incorporated this year with optional filters and count query
 @app.get("/company/year")
 def get_companies_year(filters: dict = Depends(company_filters), count_only: bool = Query(False)):
@@ -132,6 +123,34 @@ def get_companies_year(filters: dict = Depends(company_filters), count_only: boo
     end_of_year = today.replace(month=12, day=31)
     result = query_companies(filters, date_from=start_of_year, date_to=end_of_year, count_only=count_only)
     return {"result": result}
+
+# Endpoint: Fetch top 5 addresses by count for a specified time period
+@app.get("/company/{parameter}/address_top5")
+async def get_top_addresses(parameter: str):
+    # Determine the date range based on the parameter
+    today = date.today()
+    
+    if parameter == "today":
+        start_date = today
+        end_date = today
+    elif parameter == "week":
+        start_date = today - timedelta(days=today.weekday())  # Monday
+        end_date = start_date + timedelta(days=6)  # Sunday
+    elif parameter == "month":
+        start_date = today.replace(day=1)
+        end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(days=1)
+    elif parameter == "year":
+        start_date = today.replace(month=1, day=1)
+        end_date = today.replace(month=12, day=31)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid parameter. Choose from 'today', 'week', 'month', or 'year'.")
+    
+    try:
+        # Call the PostgreSQL function to get top addresses
+        response = supabase.rpc('get_top_addresses', {'start_date': start_date.isoformat(), 'end_date': end_date.isoformat()}).execute()
+        return {"top_addresses": response.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/directors/count")
 async def get_director_count():
