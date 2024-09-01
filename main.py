@@ -143,8 +143,8 @@ async def get_top_addresses(parameter: str):
         start_date = today.replace(month=1, day=1)
         end_date = today.replace(month=12, day=31)
     elif parameter == "all":
-        start_date = today.replace(month=1, day=1)
-        end_date = today.replace(month=12, day=31, year=2020)
+        start_date = today.replace(month=1, day=1, year=2020)
+        end_date = today.replace(month=12, day=31, year=2300)
     else:
         raise HTTPException(status_code=400, detail="Invalid parameter. Choose from 'today', 'week', 'month', or 'year'.")
     
