@@ -93,21 +93,27 @@ def query_companies(filters: dict, sort_by: Optional[str] = None, sort_order: Op
 # Endpoint: Fetch all companies with optional filters and count query
 @app.get("/company/all")
 def get_all_companies(
-    filters: dict = Depends(company_filters), 
+    filters_and_sort: tuple = Depends(company_filters),
+    #filters: dict = Depends(company_filters), 
     count_only: bool = Query(False),
     sort_by: Optional[str] = Query(None),
     sort_order: Optional[str] = Query("desc")):
+
+    filters, sort_by, sort_order = filters_and_sort
     result = query_companies(filters, sort_by=sort_by, sort_order=sort_order, count_only=count_only)
     return {"result": result}
 
 # Endpoint: Fetch companies incorporated today with optional filters and count query
 @app.get("/company/today")
 def get_companies_today(
-    filters: dict = Depends(company_filters), 
+    filters_and_sort: tuple = Depends(company_filters),
+    #filters: dict = Depends(company_filters), 
     count_only: bool = Query(False), 
     sort_by: Optional[str] = Query(None),
     sort_order: Optional[str] = Query("desc")):
+
     today = date.today()
+    filters, sort_by, sort_order = filters_and_sort
     result = query_companies(filters, sort_by=sort_by, sort_order=sort_order, date_from=today, date_to=today, count_only=count_only)
     return {"result": result}
 
@@ -115,7 +121,8 @@ def get_companies_today(
 # Endpoint: Fetch companies incorporated this week (Monday - Sunday) with optional filters and count query
 @app.get("/company/week")
 def get_companies_week(
-    filters: dict = Depends(company_filters),
+    filters_and_sort: tuple = Depends(company_filters),
+    #filters: dict = Depends(company_filters),
     count_only: bool = Query(False),
     sort_by: Optional[str] = Query(None),
     sort_order: Optional[str] = Query("desc")
@@ -123,13 +130,15 @@ def get_companies_week(
     today = date.today()
     start_of_week = today - timedelta(days=today.weekday())  # Monday
     end_of_week = start_of_week + timedelta(days=6)  # Sunday
+    filters, sort_by, sort_order = filters_and_sort
     result = query_companies(filters, sort_by=sort_by, sort_order=sort_order, date_from=start_of_week, date_to=end_of_week, count_only=count_only)
     return {"result": result}
 
 # Endpoint: Fetch companies incorporated this month with optional filters and count query
 @app.get("/company/month")
 def get_companies_month(
-    filters: dict = Depends(company_filters), 
+    filters_and_sort: tuple = Depends(company_filters),
+    #filters: dict = Depends(company_filters), 
     count_only: bool = Query(False),
     sort_by: Optional[str] = Query(None),
     sort_order: Optional[str] = Query("desc")):
@@ -137,13 +146,15 @@ def get_companies_month(
     today = date.today()
     start_of_month = today.replace(day=1)
     end_of_month = (start_of_month + timedelta(days=31)).replace(day=1) - timedelta(days=1)
+    filters, sort_by, sort_order = filters_and_sort
     result = query_companies(filters, sort_by=sort_by, sort_order=sort_order, date_from=start_of_month, date_to=end_of_month, count_only=count_only)
     return {"result": result}
 
 # Endpoint: Fetch companies incorporated this year with optional filters and count query
 @app.get("/company/year")
 def get_companies_month(
-    filters: dict = Depends(company_filters), 
+    filters_and_sort: tuple = Depends(company_filters),
+    #filters: dict = Depends(company_filters), 
     count_only: bool = Query(False),
     sort_by: Optional[str] = Query(None),
     sort_order: Optional[str] = Query("desc")):
@@ -151,6 +162,7 @@ def get_companies_month(
     today = date.today()
     start_of_year = today.replace(month=1, day=1)
     end_of_year = today.replace(month=12, day=31)
+    filters, sort_by, sort_order = filters_and_sort
     result = query_companies(filters, sort_by=sort_by, sort_order=sort_order, date_from=start_of_year, date_to=end_of_year, count_only=count_only)
     return {"result": result}
 
