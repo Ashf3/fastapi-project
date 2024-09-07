@@ -155,7 +155,7 @@ async def get_top_addresses(parameter: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-# Endpoint: Fetch top 5 addresses by count for a specified time period
+# Endpoint: Fetch top 5 directors by count for a specified time period
 @app.get("/directors/{parameter}/directors_top5")
 async def get_top_directors(parameter: str):
     # Determine the date range based on the parameter
@@ -183,6 +183,38 @@ async def get_top_directors(parameter: str):
         # Call the PostgreSQL function to get top addresses
         response = supabase.rpc('get_top_directors', {'start_date': start_date.isoformat(), 'end_date': end_date.isoformat()}).execute()
         return {"top_directors": response.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+# Endpoint: Fetch top 5 SIC Codes by count for a specified time period
+@app.get("/company/{parameter}/sic_top5")
+async def get_top_sic_codes(parameter: str):
+    # Determine the date range based on the parameter
+    today = date.today()
+    
+    if parameter == "today":
+        start_date = today
+        end_date = today
+    elif parameter == "week":
+        start_date = today - timedelta(days=today.weekday())  # Monday
+        end_date = start_date + timedelta(days=6)  # Sunday
+    elif parameter == "month":
+        start_date = today.replace(day=1)
+        end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(days=1)
+    elif parameter == "year":
+        start_date = today.replace(month=1, day=1)
+        end_date = today.replace(month=12, day=31)
+    elif parameter == "all":
+        start_date = today.replace(month=1, day=1, year=2020)
+        end_date = today.replace(month=12, day=31, year=2300)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid parameter. Choose from 'today', 'week', 'month', or 'year'.")
+    
+    try:
+        # Call the PostgreSQL function to get top addresses
+        response = supabase.rpc('get_top_sic_codes', {'start_date': start_date.isoformat(), 'end_date': end_date.isoformat()}).execute()
+        return {"top_sic_codes": response.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
