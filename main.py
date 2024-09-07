@@ -156,7 +156,7 @@ async def get_top_addresses(parameter: str):
         raise HTTPException(status_code=500, detail=str(e))
     
 # Endpoint: Fetch top 5 addresses by count for a specified time period
-@app.get("/company/{parameter}/directors_top5")
+@app.get("/directors/{parameter}/directors_top5")
 async def get_top_directors(parameter: str):
     # Determine the date range based on the parameter
     today = date.today()
