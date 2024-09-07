@@ -82,7 +82,8 @@ def query_companies(filters: dict, sort_by: Optional[str] = None, sort_order: Op
 
     # Apply sorting if specified
     if sort_by:
-        query = query.order(sort_by, ascending=(sort_order == 'asc'))
+        # 'desc' is True if sort_order is 'desc', otherwise False
+        query = query.order(sort_by, desc=(sort_order == 'desc'))
 
     # If count_only is True, return just the count
     response = query.execute()
